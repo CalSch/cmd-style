@@ -185,6 +185,14 @@ app.command("pad [x] [y]").action(function(x,y) {
 	output+=`${(" ".repeat(newWidth)+"\n").repeat(y)}`;
 });
 
+app.command("width <x>").action(function(x) {
+	let newWidth=x;
+	for (let line of input.split("\n")) {
+		let len=stringWidth(line);
+		output+=`${line}${" ".repeat(newWidth-len)}\n`
+	}
+});
+
 app.command("border [style]").action(function(style) {
 	style=style||"normal"
 	if (typeof borderStyles[style] === "undefined") {
