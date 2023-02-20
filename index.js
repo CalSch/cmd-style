@@ -10,6 +10,63 @@ const rl = createInterface({
 	terminal: false
 });  
 
+const borderStyles={
+	retro: {
+		tl: "+",
+		tm: "-",
+		tr: "+",
+		l:  "|",
+		r:  "|",
+		bl: "+",
+		bm: "-",
+		br: "+",
+	},
+	normal: {
+		tl: "┌",
+		tm: "─",
+		tr: "┐",
+		l:  "│",
+		r:  "│",
+		bl: "└",
+		bm: "─",
+		br: "┘",
+	},
+	round: {
+		tl: "╭",
+		tm: "─",
+		tr: "╮",
+		l:  "│",
+		r:  "│",
+		bl: "╰",
+		bm: "─",
+		br: "╯",
+	},
+	double: {
+		tl: "╔",
+		tm: "═",
+		tr: "╗",
+		l:  "║",
+		r:  "║",
+		bl: "╚",
+		bm: "═",
+		br: "╝",
+	},
+	heavy: {
+		tl: "┏",
+		tm: "━",
+		tr: "┓",
+		l:  "┃",
+		r:  "┃",
+		bl: "┗",
+		bm: "━",
+		br: "┛",
+	},
+}
+
+String.prototype.oldRepeat=String.prototype.repeat;
+String.prototype.repeat=function(n){
+	return this.oldRepeat(Math.max(n,0))
+}
 
 let input=""
 rl.on('line',(i)=>{
@@ -25,6 +82,27 @@ rl.on('close',()=>{
 })
 
 let output="";
+
+function getWidth(str) {
+	let w=0;
+	for (let line of str.split("\n")) {
+		let lineWidth=stringWidth(line);
+		if (w<lineWidth) {
+			w=lineWidth;
+		}
+	}
+
+	return w;
+}
+
+function getHeight(str) {
+	let h=0;
+	for (let line of str.split("\n")) {
+		h++;
+	}
+
+	return h;
+}
 
 app
 .name("Command Line Styler")
@@ -54,7 +132,10 @@ app.command("fg <color>").action(function(color) {
 	if (typeof codes[color] === "undefined") {
 		app.error(`<color> (${color}) must be one of ${Object.keys(codes)}`)
 	}
-	output=`\x1b[${codes[color]}m${input}\x1b[0m`;
+	output="";
+	for (let line of input.split("\n")) {
+		output+=`\x1b[${codes[color]}m${line}\x1b[0m\n`;
+	}
 });
 
 app.command("bg <color>").action(function(color) {
@@ -69,18 +150,50 @@ app.command("bg <color>").action(function(color) {
 	if (typeof codes[color] === "undefined") {
 		app.error(`<color> (${color}) must be one of ${Object.keys(codes)}`)
 	}
-	output=`\x1b[${codes[color]}m${input}\x1b[0m`;
+	output="";
+	for (let line of input.split("\n")) {
+		output+=`\x1b[${codes[color]}m${line}\x1b[0m\n`;
+	}
 });
 
 app.command("center").action(function(){
-	let s=process.stdout.getWindowSize()
+	let s;
+	if (process.stdout.getWindowSize) {
+		s=process.stdout.getWindowSize();
+	} else {
+		s=[
+			getWidth(input),
+			getHeight(input)
+		]
+	}
 	for (let line of input.split("\n")) {
-		output+=`\x1b[${Math.floor(s[0]/2-stringWidth(line)/2)}G${line}\n`
+		output+=`${" ".repeat(Math.floor(s[0]/2-stringWidth(line)/2))}${line}\n`
 	}
 });
 
 app.command("pad [x] [y]").action(function(x,y) {
 	x=x||1;
 	y=y||0;
-	output=`${"\n".repeat(y)}${" ".repeat(x)}${input}${"\n".repeat(y)}${" ".repeat(x)}`
+	let newWidth=getWidth(input)+x*2;
+	output=`${(" ".repeat(newWidth)+"\n").repeat(y)}`;
+	for (let line of input.split("\n")) {
+		let len=stringWidth(line);
+		output+=`${" ".repeat(x)}${line}${" ".repeat(newWidth-len-x)}\n`
+	}
+	output+=`${(" ".repeat(newWidth)+"\n").repeat(y)}`;
+});
+
+app.command("border [style]").action(function(style) {
+	style=style||"normal"
+	if (typeof borderStyles[style] === "undefined") {
+		app.error(`Border style (${style}) must be one of ${Object.keys(borderStyles)}`)
+	}
+	let b=borderStyles[style];
+	let width=getWidth(input);
+	output=b.tl+b.tm.repeat(width)+b.tr+"\n";
+	for (let line of input.split("\n")) {
+		let len=stringWidth(line);
+		output+=`${b.l}${line}${" ".repeat(width-len)}${b.r}\n`
+	}
+	output+=b.bl+b.bm.repeat(width)+b.br;
 });
