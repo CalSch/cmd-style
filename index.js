@@ -130,12 +130,21 @@ app.command("fg <color>").action(function(color) {
 		magenta:35,
 		cyan:   36,
 	}
-	if (typeof codes[color] === "undefined") {
-		app.error(`<color> (${color}) must be one of ${Object.keys(codes)}`)
+	let code=`\x1b[${codes[color]}m`;
+	if (color>0 && color<=255) {
+		code=`\x1b[38;5;${color}m`
+	} else if (/\d{1,3},\d{1,3},\d{1,3}/.test(color)) {
+		let l=color.split(',')
+		let r=l[0]
+		let g=l[1]
+		let b=l[2]
+		code=`\x1b[38;2;${r};${g};${b}m`;
+	} else if (typeof codes[color] === "undefined") {
+		app.error(`<color> (${color}) must be one of ${Object.keys(codes)}, a number (0-255), or an RGB color (ex. 255,127,203)`)
 	}
 	output="";
 	for (let line of input.split("\n")) {
-		output+=`\x1b[${codes[color]}m${line}\x1b[0m\n`;
+		output+=`${code}${line}\x1b[0m\n`;
 	}
 });
 
@@ -149,12 +158,21 @@ app.command("bg <color>").action(function(color) {
 		magenta:45,
 		cyan:   46,
 	}
-	if (typeof codes[color] === "undefined") {
-		app.error(`<color> (${color}) must be one of ${Object.keys(codes)}`)
+	let code=`\x1b[${codes[color]}m`;
+	if (color>0 && color<=255) {
+		code=`\x1b[48;5;${color}m`
+	} else if (/\d{1,3},\d{1,3},\d{1,3}/.test(color)) {
+		let l=color.split(',')
+		let r=l[0]
+		let g=l[1]
+		let b=l[2]
+		code=`\x1b[48;2;${r};${g};${b}m`;
+	} else if (typeof codes[color] === "undefined") {
+		app.error(`<color> (${color}) must be one of ${Object.keys(codes)}, a number (0-255), or an RGB color (ex. 255,127,203)`)
 	}
 	output="";
 	for (let line of input.split("\n")) {
-		output+=`\x1b[${codes[color]}m${line}\x1b[0m\n`;
+		output+=`${code}${line}\x1b[0m\n`;
 	}
 });
 
@@ -187,6 +205,14 @@ app.command("pad [x] [y]").action(function(x,y) {
 
 app.command("width <x>").action(function(x) {
 	let newWidth=x;
+	for (let line of input.split("\n")) {
+		let len=stringWidth(line);
+		output+=`${line}${" ".repeat(newWidth-len)}\n`
+	}
+});
+
+app.command("minwidth <x>").action(function(x) {
+	let newWidth=Math.max(x,getWidth(input));
 	for (let line of input.split("\n")) {
 		let len=stringWidth(line);
 		output+=`${line}${" ".repeat(newWidth-len)}\n`
