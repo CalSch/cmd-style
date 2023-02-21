@@ -127,6 +127,7 @@ app.command("underline").action(function() {
 app.command("fg <color>").action(function(color) {
 	let codes={
 		black:  30,
+		white:  37,
 		red:    31,
 		green:  32,
 		yellow: 33,
@@ -155,6 +156,7 @@ app.command("fg <color>").action(function(color) {
 app.command("bg <color>").action(function(color) {
 	let codes={
 		black:  40,
+		white:  47,
 		red:    41,
 		green:  42,
 		yellow: 43,
