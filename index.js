@@ -68,6 +68,10 @@ String.prototype.repeat=function(n){
 	return this.oldRepeat(Math.max(n,0))
 }
 
+function def(x) {
+	return (typeof x!=="undefined")
+}
+
 let input=""
 rl.on('line',(i)=>{
 	input+=i;
@@ -191,16 +195,38 @@ app.command("center").action(function(){
 	}
 });
 
-app.command("pad [x] [y]").action(function(x,y) {
-	x=x||1;
-	y=y||0;
-	let newWidth=getWidth(input)+x*2;
-	output=`${(" ".repeat(newWidth)+"\n").repeat(y)}`;
+app.command("pad [a] [b] [c] [d]").action(function(a,b,c,d) {
+	let left=1;
+	let right=1;
+	let top=0;
+	let bottom=0;
+	if (!def(a) && !def(b) && !def(c) && !def(d)) {
+		
+	} else if (def(a) && !def(b) && !def(c) && !def(d)) {
+		left=right=top=bottom=a;
+	} else if (def(a) && def(b) && !def(c) && !def(d)) {
+		left=right=a;
+		top=bottom=b;
+	} else if (def(a) && def(b) && def(c) && def(d)) {
+		top=a;
+		bottom=b;
+		left=c;
+		right=d;
+	} else {
+		app.error("pad args must be in one of the formats: `pad` (default), `pad all` (pad all sides), `pad horizontal vertical`, or `pad top bottom left right`");
+	}
+	top=parseInt(top);
+	bottom=parseInt(bottom);
+	left=parseInt(left);
+	right=parseInt(right);
+
+	let newWidth=getWidth(input)+left+right;
+	output=`${(" ".repeat(newWidth)+"\n").repeat(top)}`;
 	for (let line of input.split("\n")) {
 		let len=stringWidth(line);
-		output+=`${" ".repeat(x)}${line}${" ".repeat(newWidth-len-x)}\n`
+		output+=`${" ".repeat(left)}${line}${" ".repeat(right)}\n`
 	}
-	output+=`${(" ".repeat(newWidth)+"\n").repeat(y)}`;
+	output+=`${(" ".repeat(newWidth)+"\n").repeat(bottom)}`;
 });
 
 app.command("width <x>").action(function(x) {
